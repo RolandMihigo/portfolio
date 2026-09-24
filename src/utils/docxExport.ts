@@ -9,36 +9,38 @@ import {
   WidthType,
   AlignmentType,
   BorderStyle,
+  UnderlineType,
+  ExternalHyperlink,
   convertInchesToTwip,
 } from 'docx';
 import { saveAs } from 'file-saver';
 import { CVData } from '../types/cv';
+import { createLogoImageRun } from './docxLogos';
 
 export async function exportToDocx(cv: CVData) {
   const primaryNavy = '0F3B6C';
   const accentBlue = '0284C7';
   const darkSlate = '1E293B';
   const bodyMuted = '475569';
-  const lightBg = 'F0F7FF';
   const borderColor = 'CBD5E1';
 
   // Helper for section headings
   const createSectionHeading = (title: string) => {
     return new Paragraph({
-      spacing: { before: 240, after: 120 },
+      spacing: { before: 200, after: 100 },
       border: {
         bottom: {
           color: primaryNavy,
           space: 4,
           style: BorderStyle.SINGLE,
-          size: 16,
+          size: 14,
         },
       },
       children: [
         new TextRun({
           text: title.toUpperCase(),
           bold: true,
-          size: 22, // 11pt
+          size: 20, // 10pt
           color: primaryNavy,
           font: 'Arial',
         }),
@@ -50,11 +52,11 @@ export async function exportToDocx(cv: CVData) {
   const leftColumnChildren: Paragraph[] = [
     createSectionHeading('Profil Professionnel'),
     new Paragraph({
-      spacing: { after: 180 },
+      spacing: { after: 160 },
       children: [
         new TextRun({
           text: cv.profile,
-          size: 18, // 9pt
+          size: 17, // 8.5pt
           color: darkSlate,
           font: 'Arial',
         }),
@@ -64,13 +66,13 @@ export async function exportToDocx(cv: CVData) {
     createSectionHeading('Compétences Techniques'),
     ...cv.skillCategories.flatMap((cat) => [
       new Paragraph({
-        spacing: { before: 100, after: 40 },
+        spacing: { before: 90, after: 30 },
         children: [
           new TextRun({
-            text: cat.title,
+            text: `▸ ${cat.title}`,
             bold: true,
             size: 18,
-            color: accentBlue,
+            color: primaryNavy,
             font: 'Arial',
           }),
         ],
@@ -79,11 +81,11 @@ export async function exportToDocx(cv: CVData) {
         (skill) =>
           new Paragraph({
             bullet: { level: 0 },
-            spacing: { before: 20, after: 20 },
+            spacing: { before: 15, after: 15 },
             children: [
               new TextRun({
                 text: skill,
-                size: 17,
+                size: 16,
                 color: bodyMuted,
                 font: 'Arial',
               }),
@@ -96,19 +98,19 @@ export async function exportToDocx(cv: CVData) {
     ...cv.languages.map(
       (lang) =>
         new Paragraph({
-          spacing: { before: 40, after: 40 },
+          spacing: { before: 30, after: 30 },
           children: [
             new TextRun({
               text: `[${lang.code}]  ${lang.name}: `,
               bold: true,
-              size: 18,
+              size: 17,
               color: primaryNavy,
               font: 'Arial',
             }),
             new TextRun({
               text: lang.level,
               italics: true,
-              size: 17,
+              size: 16,
               color: bodyMuted,
               font: 'Arial',
             }),
@@ -121,12 +123,12 @@ export async function exportToDocx(cv: CVData) {
       (interest) =>
         new Paragraph({
           bullet: { level: 0 },
-          spacing: { before: 30, after: 30 },
+          spacing: { before: 20, after: 20 },
           children: [
             new TextRun({
               text: interest.title,
               bold: true,
-              size: 18,
+              size: 17,
               color: darkSlate,
               font: 'Arial',
             }),
@@ -135,7 +137,7 @@ export async function exportToDocx(cv: CVData) {
                   new TextRun({
                     text: ` ${interest.subtitle}`,
                     italics: true,
-                    size: 16,
+                    size: 15,
                     color: bodyMuted,
                     font: 'Arial',
                   }),
@@ -146,17 +148,19 @@ export async function exportToDocx(cv: CVData) {
     ),
   ];
 
-  // Build Right Column Paragraphs
-  const rightColumnChildren: Paragraph[] = [
-    createSectionHeading('Expérience Professionnelle'),
-    ...cv.experiences.flatMap((exp) => [
+  // Prepare Experience Rows with Company Logos
+  const experienceParagraphs: Paragraph[] = [];
+  for (const exp of cv.experiences) {
+    const expLogo = await createLogoImageRun(exp.logoType, 16);
+    experienceParagraphs.push(
       new Paragraph({
-        spacing: { before: 140, after: 40 },
+        spacing: { before: 120, after: 30 },
         children: [
+          ...(expLogo ? [expLogo, new TextRun({ text: '  ' })] : []),
           new TextRun({
             text: exp.company,
             bold: true,
-            size: 20,
+            size: 19,
             color: primaryNavy,
             font: 'Arial',
           }),
@@ -165,7 +169,7 @@ export async function exportToDocx(cv: CVData) {
                 new TextRun({
                   text: ` (${exp.companyType})`,
                   italics: true,
-                  size: 17,
+                  size: 16,
                   color: bodyMuted,
                   font: 'Arial',
                 }),
@@ -174,19 +178,19 @@ export async function exportToDocx(cv: CVData) {
           new TextRun({
             text: `  |  ${exp.period}`,
             bold: true,
-            size: 18,
+            size: 17,
             color: accentBlue,
             font: 'Arial',
           }),
         ],
       }),
       new Paragraph({
-        spacing: { before: 20, after: 60 },
+        spacing: { before: 10, after: 50 },
         children: [
           new TextRun({
             text: exp.role,
             bold: true,
-            size: 18,
+            size: 17,
             color: darkSlate,
             font: 'Arial',
           }),
@@ -195,7 +199,7 @@ export async function exportToDocx(cv: CVData) {
                 new TextRun({
                   text: ` — ${exp.location}`,
                   italics: true,
-                  size: 17,
+                  size: 16,
                   color: bodyMuted,
                   font: 'Arial',
                 }),
@@ -207,168 +211,234 @@ export async function exportToDocx(cv: CVData) {
         (bullet) =>
           new Paragraph({
             bullet: { level: 0 },
-            spacing: { before: 20, after: 30 },
+            spacing: { before: 15, after: 25 },
             children: [
               new TextRun({
                 text: bullet,
-                size: 17,
+                size: 16,
                 color: bodyMuted,
                 font: 'Arial',
               }),
             ],
           })
-      ),
-    ]),
+      )
+    );
+  }
 
-    createSectionHeading('Formation'),
-    ...cv.education.flatMap((edu) => [
+  // Prepare Education Rows with University Logo
+  const educationParagraphs: Paragraph[] = [];
+  for (const edu of cv.education) {
+    const eduLogo = await createLogoImageRun(edu.logoType, 16);
+    educationParagraphs.push(
       new Paragraph({
-        spacing: { before: 80, after: 40 },
+        spacing: { before: 70, after: 30 },
         children: [
+          ...(eduLogo ? [eduLogo, new TextRun({ text: '  ' })] : []),
           new TextRun({
             text: edu.institution,
             bold: true,
-            size: 19,
+            size: 18,
             color: primaryNavy,
             font: 'Arial',
           }),
           new TextRun({
             text: ` (${edu.location})  |  ${edu.year}`,
             bold: true,
-            size: 17,
+            size: 16,
             color: accentBlue,
             font: 'Arial',
           }),
         ],
       }),
       new Paragraph({
-        spacing: { before: 20, after: 60 },
+        spacing: { before: 10, after: 50 },
         children: [
           new TextRun({
             text: edu.degree,
-            size: 18,
+            size: 17,
             color: darkSlate,
             font: 'Arial',
           }),
         ],
-      }),
-    ]),
+      })
+    );
+  }
 
-    createSectionHeading('Certifications'),
-    ...cv.certifications.map(
-      (cert) =>
-        new Paragraph({
-          spacing: { before: 40, after: 40 },
-          children: [
-            new TextRun({
-              text: `• ${cert.title}`,
-              bold: true,
-              size: 18,
-              color: darkSlate,
-              font: 'Arial',
-            }),
-            new TextRun({
-              text: ` — ${cert.provider} (${cert.platform})`,
-              size: 17,
-              color: bodyMuted,
-              font: 'Arial',
-            }),
-          ],
-        })
-    ),
-
-    ...(cv.projects && cv.projects.length > 0
-      ? [
-          createSectionHeading('Projet Data / Portfolio'),
-          ...cv.projects.flatMap((proj) => [
-            new Paragraph({
-              spacing: { before: 80, after: 30 },
-              children: [
-                new TextRun({
-                  text: `${proj.title} (${proj.period})`,
-                  bold: true,
-                  size: 18,
-                  color: primaryNavy,
-                  font: 'Arial',
-                }),
-              ],
-            }),
-            new Paragraph({
-              spacing: { before: 0, after: 40 },
-              children: [
-                new TextRun({
-                  text: proj.introduction,
-                  size: 16,
-                  color: darkSlate,
-                  font: 'Arial',
-                }),
-              ],
-            }),
-            ...proj.keyFindings.map(
-              (kf) =>
-                new Paragraph({
-                  bullet: { level: 0 },
-                  spacing: { before: 20, after: 20 },
+  // Prepare Certification Rows with Provider Logo & Clickable Link
+  const certificationParagraphs: Paragraph[] = [];
+  for (const cert of cv.certifications) {
+    const certLogo = await createLogoImageRun(cert.logoType, 16);
+    certificationParagraphs.push(
+      new Paragraph({
+        spacing: { before: 45, after: 45 },
+        children: [
+          ...(certLogo
+            ? [certLogo, new TextRun({ text: '  ' })]
+            : [new TextRun({ text: '• ', bold: true, color: primaryNavy })]),
+          new TextRun({
+            text: cert.title,
+            bold: true,
+            size: 17,
+            color: darkSlate,
+            font: 'Arial',
+          }),
+          new TextRun({
+            text: ` — ${cert.provider} (${cert.platform})`,
+            size: 16,
+            color: bodyMuted,
+            font: 'Arial',
+          }),
+          ...(cert.linkUrl && cert.linkUrl !== '#'
+            ? [
+                new TextRun({ text: '   ' }),
+                new ExternalHyperlink({
                   children: [
                     new TextRun({
-                      text: `${kf.group}: `,
+                      text: '[Vérifier le certificat ↗]',
                       bold: true,
-                      size: 16,
+                      size: 15,
                       color: accentBlue,
-                      font: 'Arial',
-                    }),
-                    new TextRun({
-                      text: `${kf.highlight} — ${kf.details}`,
-                      size: 16,
-                      color: bodyMuted,
+                      underline: { type: UnderlineType.SINGLE },
                       font: 'Arial',
                     }),
                   ],
-                })
-            ),
-            new Paragraph({
-              spacing: { before: 30, after: 60 },
+                  link: cert.linkUrl,
+                }),
+              ]
+            : cert.note
+            ? [
+                new TextRun({
+                  text: `  [${cert.note}]`,
+                  italics: true,
+                  size: 14,
+                  color: '64748B',
+                  font: 'Arial',
+                }),
+              ]
+            : []),
+        ],
+      })
+    );
+  }
+
+  // Prepare Portfolio Project Rows with Tableau and Kaggle Logos & Links
+  const projectParagraphs: Paragraph[] = [];
+  if (cv.projects && cv.projects.length > 0) {
+    for (const proj of cv.projects) {
+      const kaggleIcon = await createLogoImageRun('kaggle', 14);
+      const tableauIcon = await createLogoImageRun('tableau', 14);
+
+      projectParagraphs.push(
+        new Paragraph({
+          spacing: { before: 80, after: 30 },
+          children: [
+            new TextRun({
+              text: proj.title,
+              bold: true,
+              size: 18,
+              color: primaryNavy,
+              font: 'Arial',
+            }),
+            new TextRun({
+              text: `  |  ${proj.subtitle}`,
+              italics: true,
+              size: 16,
+              color: accentBlue,
+              font: 'Arial',
+            }),
+          ],
+        }),
+        new Paragraph({
+          spacing: { before: 20, after: 30 },
+          children: [
+            new TextRun({
+              text: proj.introduction,
+              size: 16,
+              color: darkSlate,
+              font: 'Arial',
+            }),
+          ],
+        }),
+        new Paragraph({
+          spacing: { before: 20, after: 60 },
+          children: [
+            ...(kaggleIcon ? [kaggleIcon, new TextRun({ text: ' ' })] : []),
+            new ExternalHyperlink({
               children: [
                 new TextRun({
-                  text: `Kaggle: ${proj.kaggleUrl}   |   Tableau Dashboard: ${proj.tableauUrl}`,
-                  size: 15,
+                  text: 'Étude Kaggle & SQL BigQuery ↗',
                   bold: true,
+                  size: 15,
                   color: accentBlue,
+                  underline: { type: UnderlineType.SINGLE },
                   font: 'Arial',
                 }),
               ],
+              link: proj.kaggleUrl,
             }),
-          ]),
-        ]
+            new TextRun({ text: '    •    ' }),
+            ...(tableauIcon ? [tableauIcon, new TextRun({ text: ' ' })] : []),
+            new ExternalHyperlink({
+              children: [
+                new TextRun({
+                  text: 'Dashboard Tableau Public ↗',
+                  bold: true,
+                  size: 15,
+                  color: 'E8762D',
+                  underline: { type: UnderlineType.SINGLE },
+                  font: 'Arial',
+                }),
+              ],
+              link: proj.tableauUrl,
+            }),
+          ],
+        })
+      );
+    }
+  }
+
+  // Build Right Column Paragraphs
+  const rightColumnChildren: Paragraph[] = [
+    createSectionHeading('Expérience Professionnelle'),
+    ...experienceParagraphs,
+
+    createSectionHeading('Formation Académique'),
+    ...educationParagraphs,
+
+    createSectionHeading('Certifications Professionnelles'),
+    ...certificationParagraphs,
+
+    ...(cv.projects && cv.projects.length > 0
+      ? [createSectionHeading('Projet Data / Portfolio Analytique'), ...projectParagraphs]
       : []),
 
-    createSectionHeading('Personnes de Référence'),
+    createSectionHeading('Références Professionnelles'),
     ...cv.references.flatMap((ref) => [
       new Paragraph({
-        spacing: { before: 60, after: 20 },
+        spacing: { before: 60, after: 15 },
         children: [
           new TextRun({
-            text: ref.name,
+            text: `👤 ${ref.name}`,
             bold: true,
-            size: 18,
+            size: 17,
             color: primaryNavy,
             font: 'Arial',
           }),
           new TextRun({
             text: ` — ${ref.role}`,
             italics: true,
-            size: 17,
+            size: 15,
             color: darkSlate,
             font: 'Arial',
           }),
         ],
       }),
       new Paragraph({
-        spacing: { before: 0, after: 60 },
+        spacing: { before: 0, after: 45 },
         children: [
           new TextRun({
-            text: `${ref.email}  |  ${ref.phone}`,
-            size: 16,
+            text: `✉️ ${ref.email}   |   📞 ${ref.phone}`,
+            size: 15,
             color: accentBlue,
             font: 'Arial',
           }),
@@ -404,10 +474,10 @@ export async function exportToDocx(cv: CVData) {
               type: WidthType.PERCENTAGE,
             },
             margins: {
-              top: convertInchesToTwip(0.1),
-              bottom: convertInchesToTwip(0.1),
-              left: convertInchesToTwip(0.05),
-              right: convertInchesToTwip(0.15),
+              top: convertInchesToTwip(0.08),
+              bottom: convertInchesToTwip(0.08),
+              left: convertInchesToTwip(0.04),
+              right: convertInchesToTwip(0.12),
             },
             children: leftColumnChildren,
           }),
@@ -417,10 +487,10 @@ export async function exportToDocx(cv: CVData) {
               type: WidthType.PERCENTAGE,
             },
             margins: {
-              top: convertInchesToTwip(0.1),
-              bottom: convertInchesToTwip(0.1),
-              left: convertInchesToTwip(0.15),
-              right: convertInchesToTwip(0.05),
+              top: convertInchesToTwip(0.08),
+              bottom: convertInchesToTwip(0.08),
+              left: convertInchesToTwip(0.12),
+              right: convertInchesToTwip(0.04),
             },
             children: rightColumnChildren,
           }),
@@ -429,16 +499,21 @@ export async function exportToDocx(cv: CVData) {
     ],
   });
 
-  // Top Header Banner
+  // Load Social Header Icons
+  const linkedinIcon = await createLogoImageRun('linkedin', 13);
+  const githubIcon = await createLogoImageRun('github', 13);
+  const kaggleIcon = await createLogoImageRun('kaggle', 13);
+
+  // Top Header Banner with Interactive Links and Icons
   const headerParagraphs = [
     new Paragraph({
       alignment: AlignmentType.LEFT,
-      spacing: { before: 0, after: 60 },
+      spacing: { before: 0, after: 50 },
       children: [
         new TextRun({
           text: cv.fullName,
           bold: true,
-          size: 36, // 18pt
+          size: 34, // 17pt
           color: primaryNavy,
           font: 'Arial',
         }),
@@ -446,12 +521,12 @@ export async function exportToDocx(cv: CVData) {
     }),
     new Paragraph({
       alignment: AlignmentType.LEFT,
-      spacing: { before: 0, after: 60 },
+      spacing: { before: 0, after: 50 },
       children: [
         new TextRun({
           text: cv.title,
           bold: true,
-          size: 24, // 12pt
+          size: 22, // 11pt
           color: accentBlue,
           font: 'Arial',
         }),
@@ -459,11 +534,11 @@ export async function exportToDocx(cv: CVData) {
     }),
     new Paragraph({
       alignment: AlignmentType.LEFT,
-      spacing: { before: 0, after: 100 },
+      spacing: { before: 0, after: 80 },
       children: [
         new TextRun({
-          text: cv.tags.join('  |  '),
-          size: 18,
+          text: cv.tags.join('  •  '),
+          size: 17,
           bold: true,
           color: darkSlate,
           font: 'Arial',
@@ -472,11 +547,11 @@ export async function exportToDocx(cv: CVData) {
     }),
     new Paragraph({
       alignment: AlignmentType.LEFT,
-      spacing: { before: 0, after: 60 },
+      spacing: { before: 0, after: 50 },
       children: [
         new TextRun({
           text: `📍 ${cv.contact.location.replace('\n', ', ')}   •   📞 ${cv.contact.phone}   •   ✉️ ${cv.contact.email}`,
-          size: 17,
+          size: 16,
           color: bodyMuted,
           font: 'Arial',
         }),
@@ -484,30 +559,68 @@ export async function exportToDocx(cv: CVData) {
     }),
     new Paragraph({
       alignment: AlignmentType.LEFT,
-      spacing: { before: 0, after: 60 },
+      spacing: { before: 0, after: 50 },
       children: [
-        new TextRun({
-          text: `LinkedIn: ${cv.contact.linkedin || ''}   •   GitHub: ${cv.contact.github || ''}   •   Kaggle: ${cv.contact.kaggle || ''}`,
-          size: 15,
-          color: accentBlue,
-          font: 'Arial',
+        ...(linkedinIcon ? [linkedinIcon, new TextRun({ text: ' ' })] : []),
+        new ExternalHyperlink({
+          children: [
+            new TextRun({
+              text: 'LinkedIn (roland-iragi)',
+              bold: true,
+              color: '0077B5',
+              underline: { type: UnderlineType.SINGLE },
+              size: 15,
+              font: 'Arial',
+            }),
+          ],
+          link: cv.contact.linkedin || '#',
+        }),
+        new TextRun({ text: '    •    ' }),
+        ...(githubIcon ? [githubIcon, new TextRun({ text: ' ' })] : []),
+        new ExternalHyperlink({
+          children: [
+            new TextRun({
+              text: 'GitHub (RolandMihigo)',
+              bold: true,
+              color: '24292E',
+              underline: { type: UnderlineType.SINGLE },
+              size: 15,
+              font: 'Arial',
+            }),
+          ],
+          link: cv.contact.github || '#',
+        }),
+        new TextRun({ text: '    •    ' }),
+        ...(kaggleIcon ? [kaggleIcon, new TextRun({ text: ' ' })] : []),
+        new ExternalHyperlink({
+          children: [
+            new TextRun({
+              text: 'Kaggle (rolandiragi)',
+              bold: true,
+              color: '20BEFF',
+              underline: { type: UnderlineType.SINGLE },
+              size: 15,
+              font: 'Arial',
+            }),
+          ],
+          link: cv.contact.kaggle || '#',
         }),
       ],
     }),
     new Paragraph({
       alignment: AlignmentType.LEFT,
-      spacing: { before: 0, after: 180 },
+      spacing: { before: 0, after: 150 },
       children: [
         new TextRun({
-          text: `🌐 Langues: ${cv.contact.languagesSummary}`,
-          size: 17,
+          text: `🌐 ${cv.contact.languagesSummary}`,
+          size: 16,
           color: bodyMuted,
           font: 'Arial',
         }),
         new TextRun({
-          text: `     —  "${cv.bannerQuote}"`,
+          text: `    —  "${cv.bannerQuote}"`,
           italics: true,
-          size: 17,
+          size: 16,
           color: accentBlue,
           font: 'Arial',
         }),
@@ -521,10 +634,10 @@ export async function exportToDocx(cv: CVData) {
         properties: {
           page: {
             margin: {
-              top: convertInchesToTwip(0.4),
-              bottom: convertInchesToTwip(0.4),
-              left: convertInchesToTwip(0.4),
-              right: convertInchesToTwip(0.4),
+              top: convertInchesToTwip(0.35),
+              bottom: convertInchesToTwip(0.35),
+              left: convertInchesToTwip(0.35),
+              right: convertInchesToTwip(0.35),
             },
           },
         },
@@ -539,9 +652,9 @@ export async function exportToDocx(cv: CVData) {
 
 /**
  * Alternative export: Word HTML document (.doc)
- * Preserves exact HTML formatting, colored badges, inline SVG and tables when opened in Microsoft Word!
+ * Preserves exact HTML formatting, inline SVG logos and colored styling when opened in Microsoft Word!
  */
-export function exportToHtmlWord(elementId: string, filename: string = 'CV_Iragi_Mihigo_Roland.doc') {
+export function exportToHtmlWord(elementId: string, filename = 'CV_Iragi_Mihigo_Roland.doc') {
   const el = document.getElementById(elementId);
   if (!el) return;
 
@@ -550,17 +663,22 @@ export function exportToHtmlWord(elementId: string, filename: string = 'CV_Iragi
     <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
     <head>
       <meta charset="utf-8">
-      <title>Curriculum Vitae</title>
+      <title>Curriculum Vitae - Iragi Mihigo Roland</title>
       <style>
         @page {
           size: A4 portrait;
-          margin: 10mm;
+          margin: 8mm;
         }
         body {
-          font-family: Arial, sans-serif;
+          font-family: Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           color: #1e293b;
           background: #ffffff;
-          line-height: 1.4;
+          line-height: 1.35;
+          font-size: 12px;
+        }
+        a {
+          color: #0284c7;
+          text-decoration: underline;
         }
       </style>
     </head>

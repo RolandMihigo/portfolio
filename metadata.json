@@ -2,5 +2,7 @@
   "name": "CV Iragi Mihigo Roland - Spécialiste Données & SIG",
   "description": "Curriculum Vitae professionnel de Roland Iragi Mihigo, Spécialiste en Gestion de l'Information et Analyse des Données (SIG, Power BI, KoboToolbox). Export haute fidélité en PDF et Word (.docx).",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

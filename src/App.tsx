@@ -10,7 +10,7 @@ import { exportToPdf, triggerPrint } from './utils/pdfExport';
 import { exportToDocx, exportToHtmlWord } from './utils/docxExport';
 import { CheckCircle2, Download, AlertCircle, FileCheck } from 'lucide-react';
 
-const STORAGE_KEY = 'cv_roland_data_v3';
+const STORAGE_KEY = 'cv_roland_data_v4';
 
 export default function App() {
   const [cv, setCv] = useState<CVData>(() => {

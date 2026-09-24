@@ -86,32 +86,46 @@ export const RightColumn: React.FC<RightColumnProps> = ({ cv }) => {
 
       {/* 3. Certifications */}
       <section>
-        <SectionHeader title="Certifications" iconType="certifications" />
-        <div className="flex flex-col gap-2">
+        <SectionHeader title="Certifications Professionnelles" iconType="certifications" />
+        <div className="flex flex-col gap-1.5">
           {cv.certifications.map((cert) => (
             <div
               key={cert.id}
-              className="flex items-center justify-between gap-2 py-1 border-b border-slate-100 last:border-none"
+              className="flex items-center justify-between gap-2.5 py-1 px-1.5 rounded-md hover:bg-slate-50/80 transition-colors border-b border-slate-100 last:border-none"
             >
-              {/* Logo */}
-              <div className="w-18 shrink-0 flex items-center">
-                <LogoRenderer type={cert.logoType} className="max-h-5 w-auto" />
+              {/* Logo de l'entreprise ou organisme émetteur */}
+              <div className="w-20 shrink-0 flex items-center justify-start">
+                <LogoRenderer type={cert.logoType} className="max-h-5 max-w-[76px] w-auto" />
               </div>
 
-              {/* Title & Issuer */}
-              <div className="flex-1 flex flex-col justify-center">
-                <span className="text-[10px] font-bold text-slate-900 leading-tight">
+              {/* Title & Description */}
+              <div className="flex-1 min-w-0 flex flex-col justify-center">
+                <span className="text-[10px] font-bold text-slate-900 leading-tight truncate">
                   {cert.title}
                 </span>
-                <span className="text-[8.5px] text-slate-500 font-medium">
+                <span className="text-[8.5px] text-slate-600 font-medium leading-tight truncate">
                   {cert.provider}
                 </span>
               </div>
 
-              {/* Link */}
-              <div className="shrink-0 flex items-center gap-1 text-[9px] font-semibold text-sky-700 hover:text-sky-900 transition-colors cursor-pointer">
-                <span>Voir le certificat</span>
-                <ExternalLink className="w-2.5 h-2.5" />
+              {/* Clickable Verification Link or Note */}
+              <div className="shrink-0 flex items-center">
+                {cert.linkUrl ? (
+                  <a
+                    href={cert.linkUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-50 hover:bg-sky-100 text-[8px] font-bold text-[#0F3B6C] border border-sky-200 transition-all hover:shadow-2xs active:scale-95"
+                    title={`Vérifier la certification ${cert.title} sur ${cert.platform}`}
+                  >
+                    <span>Vérifier ↗</span>
+                    <ExternalLink className="w-2 h-2 text-[#0284C7]" />
+                  </a>
+                ) : (
+                  <span className="text-[7.5px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-full border border-slate-200/60">
+                    {cert.note || 'Attestation'}
+                  </span>
+                )}
               </div>
             </div>
           ))}
